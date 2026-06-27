@@ -1,25 +1,88 @@
-# Cloudflare Workers OpenAPI 3.1
+# Manpower Quotation API
 
-This is a Cloudflare Worker with OpenAPI 3.1 using [chanfana](https://github.com/cloudflare/chanfana) and [Hono](https://github.com/honojs/hono).
+Cloudflare Worker backend for managing manpower quotations, built with Hono, Zod OpenAPI, D1, and Kysely.
 
-This is an example project made to be used as a quick start into building OpenAPI compliant Workers that generates the
-`openapi.json` schema automatically from code and validates the incoming request to the defined parameters or request body.
+## What It Does
 
-## Get started
+- Create and update quotation drafts
+- Submit quotations for approval
+- Approve, reject, and send quotations to clients
+- List, filter, sort, and soft-delete quotations
+- Serve dashboard metrics
+- Proxy quotation payloads to an external PDF service
 
-1. Sign up for [Cloudflare Workers](https://workers.dev). The free tier is more than enough for most use cases.
-2. Clone this project and install dependencies with `npm install`
-3. Run `wrangler login` to login to your Cloudflare account in wrangler
-4. Run `wrangler deploy` to publish the API to Cloudflare Workers
+## Architecture
 
-## Project structure
+The codebase follows a strict layer split:
 
-1. Your main router is defined in `src/index.ts`.
-2. Each endpoint has its own file in `src/endpoints/`.
-3. For more information read the [chanfana documentation](https://chanfana.pages.dev/) and [Hono documentation](https://hono.dev/docs).
+- `src/routes/`: HTTP handlers, validation, and response formatting
+- `src/infrastructure/services/`: business logic and orchestration
+- `src/infrastructure/repository/`: persistence logic using Kysely builders
+- `src/infrastructure/db/`: shared Kysely schema, client, and SQL migrations
+- `src/routes/*.schema.ts`: route-local Zod request/response schemas
+- `src/schemas/`: shared validation primitives and re-exports
+
+## Database
+
+- Schema source of truth for Kysely: `src/infrastructure/db/schema.ts`
+- Raw SQL migrations: `src/infrastructure/db/migrations/*.sql`
+
+## API Docs
+
+- OpenAPI JSON: `/doc`
+- Scalar UI: `/docs`
+
+## Environment Variables
+
+- `DB`: Cloudflare D1 binding
+- `PDF_SERVICE_URL`: External PDF service endpoint
 
 ## Development
 
-1. Run `wrangler dev` to start a local instance of the API.
-2. Open `http://localhost:8787/` in your browser to see the Swagger interface where you can try the endpoints.
-3. Changes made in the `src/` folder will automatically trigger the server to reload, you only need to refresh the Swagger interface.
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run locally:
+
+```bash
+npm run dev
+```
+
+Deploy:
+
+```bash
+npm run deploy
+```
+
+Generate Worker types:
+
+```bash
+npm run cf-typegen
+```
+
+Apply D1 migrations locally:
+
+```bash
+npm run db:migrate:local
+```
+
+Apply D1 migrations remotely:
+
+```bash
+npm run db:migrate:remote
+```
+
+List D1 migrations:
+
+```bash
+npm run db:migrate:list
+```
+
+## Notes
+
+- Authentication is not implemented.
+- The API contract is generated from the Zod schemas in `src/routes/*.schema.ts` and `src/schemas/common.ts`.
+- Repository methods should remain the only place where persistence logic lives.

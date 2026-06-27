@@ -19,7 +19,7 @@
 			"binding": "DB",
 			"database_name": "manpower-quotation-db",
 			"database_id": "local-db-id",
-			"migrations_dir": "./migrations"
+			"migrations_dir": "./src/infrastructure/db/migrations"
 		}
 	]
 	/**
