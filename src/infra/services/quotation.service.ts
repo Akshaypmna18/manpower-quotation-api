@@ -40,7 +40,7 @@ export class QuotationService {
       status: "DRAFT",
       customer: input.customer,
       items: input.items,
-      createdBy: input.createdBy,
+      createdBy: input.createdBy ?? "system",
       now,
     });
   }
@@ -66,7 +66,7 @@ export class QuotationService {
       quotationDate: input.quotationDate,
       customer: input.customer,
       items: input.items,
-      updatedBy: input.updatedBy,
+      updatedBy: input.updatedBy ?? "system",
       now: new Date().toISOString(),
     });
 
@@ -77,9 +77,7 @@ export class QuotationService {
     return quotation;
   }
 
-  async submitForApproval(
-    input: SubmitApprovalRequest,
-  ): Promise<Quotation> {
+  async submitForApproval(input: SubmitApprovalRequest): Promise<Quotation> {
     const quotation = await this.repo.findById(input.id);
 
     if (!quotation) {
@@ -95,22 +93,20 @@ export class QuotationService {
 
     const now = new Date().toISOString();
 
-    const statusUpdated = await this.repo.updateStatus(
-      input.id,
-      "PENDING_APPROVAL",
-      input.submittedBy,
-      now,
-    );
-
-    if (!statusUpdated) {
+    try {
+      await this.repo.submitForApproval(
+        input.id,
+        {
+          approverName: input.approverName,
+          approverId: input.approverId,
+          approverEmail: input.approverEmail,
+        },
+        input.submittedBy,
+        now,
+      );
+    } catch {
       throw new ServiceError(500, "Failed to submit quotation for approval");
     }
-
-    await this.repo.createApprovalStep(input.id, {
-      approverName: input.approverName,
-      approverId: input.approverId,
-      approverEmail: input.approverEmail,
-    });
 
     const updatedQuotation = await this.repo.findById(input.id);
 
@@ -135,9 +131,7 @@ export class QuotationService {
     return this.decideQuotation(id, input, "REJECTED");
   }
 
-  async sendToClient(
-    input: SendToClientRequest,
-  ): Promise<Quotation> {
+  async sendToClient(input: SendToClientRequest): Promise<Quotation> {
     const quotation = await this.repo.findById(input.id);
 
     if (!quotation) {
@@ -183,9 +177,7 @@ export class QuotationService {
     return quotation;
   }
 
-  async listQuotations(
-    params: ListQuotationsParams = {},
-  ): Promise<{
+  async listQuotations(params: ListQuotationsParams = {}): Promise<{
     items: QuotationListItem[];
     total: number;
     page: number;
@@ -194,9 +186,7 @@ export class QuotationService {
     return this.repo.listQuotations(params);
   }
 
-  async getDashboardMetrics(
-    recentLimit = 5,
-  ): Promise<DashboardMetrics> {
+  async getDashboardMetrics(recentLimit = 5): Promise<DashboardMetrics> {
     const countsByStatus = await this.repo.countByStatus();
 
     const total = Object.values(countsByStatus).reduce(
@@ -213,10 +203,7 @@ export class QuotationService {
     };
   }
 
-  async deleteQuotation(
-    id: string,
-    deletedBy: string,
-  ): Promise<Quotation> {
+  async deleteQuotation(id: string, deletedBy: string): Promise<Quotation> {
     const quotation = await this.repo.findById(id);
 
     if (!quotation) {
@@ -285,26 +272,17 @@ export class QuotationService {
 
     const now = new Date().toISOString();
 
-    const decisionUpdated = await this.repo.updateApprovalDecision(
-      pendingStep.id,
-      decision,
-      input.comment ?? null,
-      now,
-    );
-
-    if (!decisionUpdated) {
+    try {
+      await this.repo.decideApproval(
+        id,
+        pendingStep.id,
+        decision,
+        input.approvedBy,
+        input.comment ?? null,
+        now,
+      );
+    } catch {
       throw new ServiceError(500, "Failed to update approval decision");
-    }
-
-    const statusUpdated = await this.repo.updateStatus(
-      id,
-      decision,
-      input.approvedBy,
-      now,
-    );
-
-    if (!statusUpdated) {
-      throw new ServiceError(500, "Failed to update quotation status");
     }
 
     const updatedQuotation = await this.repo.findById(id);

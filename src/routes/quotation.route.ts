@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
 import type { AppEnv } from "../types";
+import { isServiceError } from "../infra/services/errors";
 
 import {
   deleteQuotationQuerySchema,
@@ -144,7 +145,7 @@ export function registerQuotationRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error listing quotations.",
         },
-        error?.status ?? 400,
+        isServiceError(error) ? error.status : 500,
       ) as any;
     }
   });
@@ -164,7 +165,7 @@ export function registerQuotationRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error retrieving quotation.",
         },
-        error?.status ?? 400,
+        isServiceError(error) ? error.status : 500,
       ) as any;
     }
   });
@@ -188,7 +189,7 @@ export function registerQuotationRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error deleting quotation.",
         },
-        error?.status ?? 400,
+        isServiceError(error) ? error.status : 500,
       ) as any;
     }
   });
@@ -207,7 +208,7 @@ export function registerQuotationRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error generating PDF.",
         },
-        error?.status ?? 400,
+        isServiceError(error) ? error.status : 500,
       ) as any;
     }
   });
@@ -226,7 +227,7 @@ export function registerQuotationRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error downloading PDF.",
         },
-        error?.status ?? 400,
+        isServiceError(error) ? error.status : 500,
       ) as any;
     }
   });

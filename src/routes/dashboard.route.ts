@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
 import type { AppEnv } from "../types";
+import { isServiceError } from "../infra/services/errors";
 
 import { dashboardMetricsResponseSchema, errorResponseSchema } from "./schema";
 
@@ -44,7 +45,7 @@ export function registerDashboardRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error retrieving dashboard metrics.",
         },
-        error?.status ?? 400,
+        isServiceError(error) ? error.status : 500,
       ) as any;
     }
   });

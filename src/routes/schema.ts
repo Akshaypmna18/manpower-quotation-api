@@ -43,15 +43,24 @@ export const quotationItemSchema = z
     category: z.string().min(1).openapi({
       example: "General Labour",
     }),
-    quantity: z.string().openapi({
-      example: "10",
-    }),
-    rate: z.string().openapi({
-      example: "3500.00",
-    }),
-    otRate: z.string().openapi({
-      example: "5250.00",
-    }),
+    quantity: z
+      .union([z.string(), z.number()])
+      .transform((value) => String(value))
+      .openapi({
+        example: "10",
+      }),
+    rate: z
+      .union([z.string(), z.number()])
+      .transform((value) => String(value))
+      .openapi({
+        example: "3500.00",
+      }),
+    otRate: z
+      .union([z.string(), z.number()])
+      .transform((value) => String(value))
+      .openapi({
+        example: "5250.00",
+      }),
   })
   .openapi("QuotationItem");
 
@@ -125,7 +134,7 @@ export const createQuotationSchema = z
       }),
     ),
 
-    createdBy: z.string(),
+    createdBy: z.string().optional().default("system"),
   })
   .openapi("CreateQuotationRequest");
 
@@ -137,9 +146,7 @@ export const updateQuotationSchema = z
 
     items: z.array(quotationItemSchema).optional(),
 
-    updatedBy: z.string(),
-
-    status: quotationStatusSchema.optional(),
+    updatedBy: z.string().optional().default("system"),
   })
   .openapi("UpdateQuotationRequest");
 

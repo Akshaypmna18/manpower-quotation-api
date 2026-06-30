@@ -7,3 +7,7 @@ export class ServiceError extends Error {
     this.name = "ServiceError";
   }
 }
+
+export function isServiceError(error: unknown): error is ServiceError {
+  return error instanceof ServiceError;
+}

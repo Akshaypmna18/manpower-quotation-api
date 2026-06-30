@@ -64,19 +64,14 @@ import type {
   ): UpdateQuotationRow {
     return {
       quotation_date: input.quotationDate,
-      status: input.status,
-  
+
       customer_name: input.customer?.name,
       customer_address: input.customer?.address,
       customer_phone: input.customer?.phone,
       customer_email: input.customer?.email,
-  
+
       updated_at: new Date().toISOString(),
       updated_by: input.updatedBy,
-  
-      ...(input.status && {
-        status_changed_at: new Date().toISOString(),
-      }),
     };
   }
   

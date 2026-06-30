@@ -269,48 +269,91 @@ export class QuotationRepository {
     return rows.map(toApprovalStep);
   }
 
-  async createApprovalStep(
+  async submitForApproval(
     quotationId: string,
     approver: {
       approverName: string;
       approverId: string;
       approverEmail: string;
     },
+    submittedBy: string,
+    now: string,
   ): Promise<void> {
-    await this.db
-      .insertInto("approval_steps")
-      .values({
-        id: crypto.randomUUID(),
-        quotation_id: quotationId,
-        approver_name: approver.approverName,
-        approver_id: approver.approverId,
-        approver_email: approver.approverEmail,
-        decision: "PENDING",
-        comment: null,
-        requested_at: new Date().toISOString(),
-        approved_at: null,
-      })
-      .execute();
+    await this.db.transaction().execute(async (trx) => {
+      const result = await trx
+        .updateTable("quotations")
+        .set({
+          status: "PENDING_APPROVAL",
+          updated_by: submittedBy,
+          updated_at: now,
+          status_changed_at: now,
+        })
+        .where("id", "=", quotationId)
+        .where("is_deleted", "=", 0)
+        .executeTakeFirst();
+
+      if (Number(result.numUpdatedRows) === 0) {
+        throw new Error("Failed to submit quotation for approval");
+      }
+
+      await trx
+        .insertInto("approval_steps")
+        .values({
+          id: crypto.randomUUID(),
+          quotation_id: quotationId,
+          approver_name: approver.approverName,
+          approver_id: approver.approverId,
+          approver_email: approver.approverEmail,
+          decision: "PENDING",
+          comment: null,
+          requested_at: now,
+          approved_at: null,
+        })
+        .execute();
+    });
   }
 
-  async updateApprovalDecision(
-    id: string,
+  async decideApproval(
+    quotationId: string,
+    stepId: string,
     decision: "APPROVED" | "REJECTED",
+    approvedBy: string,
     comment: string | null,
-    approvedAt: string,
-  ): Promise<boolean> {
-    const result = await this.db
-      .updateTable("approval_steps")
-      .set({
-        decision,
-        comment,
-        approved_at: approvedAt,
-      })
-      .where("id", "=", id)
-      .where("decision", "=", "PENDING")
-      .executeTakeFirst();
+    now: string,
+  ): Promise<void> {
+    await this.db.transaction().execute(async (trx) => {
+      const decisionResult = await trx
+        .updateTable("approval_steps")
+        .set({
+          decision,
+          comment,
+          approved_at: now,
+        })
+        .where("id", "=", stepId)
+        .where("quotation_id", "=", quotationId)
+        .where("decision", "=", "PENDING")
+        .executeTakeFirst();
 
-    return Number(result.numUpdatedRows) > 0;
+      if (Number(decisionResult.numUpdatedRows) === 0) {
+        throw new Error("Failed to update approval decision");
+      }
+
+      const statusResult = await trx
+        .updateTable("quotations")
+        .set({
+          status: decision,
+          updated_by: approvedBy,
+          updated_at: now,
+          status_changed_at: now,
+        })
+        .where("id", "=", quotationId)
+        .where("is_deleted", "=", 0)
+        .executeTakeFirst();
+
+      if (Number(statusResult.numUpdatedRows) === 0) {
+        throw new Error("Failed to update quotation status");
+      }
+    });
   }
 
   async softDelete(

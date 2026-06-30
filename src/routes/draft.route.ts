@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
 import type { AppEnv } from "../types";
+import { isServiceError } from "../infra/services/errors";
 
 import {
   createQuotationSchema,
@@ -109,8 +110,8 @@ export function registerDraftRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error creating draft.",
         },
-        error?.status ?? 400,
-      );
+        isServiceError(error) ? error.status : 500,
+      ) as any;
     }
   });
 
@@ -133,8 +134,8 @@ export function registerDraftRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error updating draft.",
         },
-        error?.status ?? 400,
-      );
+        isServiceError(error) ? error.status : 500,
+      ) as any;
     }
   });
 

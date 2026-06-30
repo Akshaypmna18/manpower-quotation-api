@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
 import type { AppEnv } from "../types";
+import { isServiceError } from "../infra/services/errors";
 
 import {
   approvalDecisionRequestSchema,
@@ -174,8 +175,8 @@ export function registerApprovalRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error submitting quotation.",
         },
-        error?.status ?? 400,
-      );
+        isServiceError(error) ? error.status : 500,
+      ) as any;
     }
   });
 
@@ -196,8 +197,8 @@ export function registerApprovalRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error approving quotation.",
         },
-        error?.status ?? 400,
-      );
+        isServiceError(error) ? error.status : 500,
+      ) as any;
     }
   });
 
@@ -218,8 +219,8 @@ export function registerApprovalRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error rejecting quotation.",
         },
-        error?.status ?? 400,
-      );
+        isServiceError(error) ? error.status : 500,
+      ) as any;
     }
   });
 
@@ -239,8 +240,8 @@ export function registerApprovalRoutes(app: OpenAPIHono<AppEnv>) {
         {
           message: error?.message ?? "Error sending quotation.",
         },
-        error?.status ?? 400,
-      );
+        isServiceError(error) ? error.status : 500,
+      ) as any;
     }
   });
 

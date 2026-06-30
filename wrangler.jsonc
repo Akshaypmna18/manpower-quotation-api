@@ -12,17 +12,12 @@
   },
   "upload_source_maps": true,
   "compatibility_flags": ["nodejs_compat"],
-  "define": {
-    "__VUE_OPTIONS_API__": "false",
-    "__VUE_PROD_DEVTOOLS__": "false",
-    "__VUE_PROD_HYDRATION_MISMATCH_DETAILS__": "false",
-  },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "manpower-quotation-db",
       "database_id": "local-db-id",
-      "migrations_dir": "./src/infrastructure/db/migrations",
+      "migrations_dir": "./src/infra/db/migrations",
     },
   ],
   /**
